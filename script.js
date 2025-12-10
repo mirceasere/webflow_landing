@@ -30,3 +30,44 @@ document.querySelectorAll('.select-role').forEach(button => {
         }
     });
 });
+
+// Form Submission with Neon DB
+const form = document.querySelector('.audit-form');
+if (form) {
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = 'Submitting...';
+        submitBtn.disabled = true;
+
+        const formDataObj = new FormData(form);
+        const data = Object.fromEntries(formDataObj.entries());
+
+        try {
+            const response = await fetch('/api/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Thanks! Your audit request has been received.');
+                form.reset();
+            } else {
+                throw new Error(result.error || 'Submission failed');
+            }
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert('Something went wrong. Please try again later.');
+        } finally {
+            submitBtn.innerText = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+}

@@ -339,19 +339,19 @@
                     <form class="audit-form" onsubmit="event.preventDefault(); alert('Thanks! We will be in touch.');">
                         <div class="form-group">
                             <label>Name</label>
-                            <input type="text" placeholder="Your Name" required>
+                            <input type="text" name="name" placeholder="Your Name" required>
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" placeholder="work@company.com" required>
+                            <input type="email" name="email" placeholder="work@company.com" required>
                         </div>
                         <div class="form-group">
                             <label>Company</label>
-                            <input type="text" placeholder="Company Name" required>
+                            <input type="text" name="company" placeholder="Company Name" required>
                         </div>
                         <div class="form-group">
                             <label>CRM</label>
-                            <select>
+                            <select name="crm">
                                 <option>HubSpot</option>
                                 <option>Salesforce</option>
                                 <option>Other</option>
@@ -359,13 +359,15 @@
                         </div>
                         <div class="form-group">
                             <label># of Service Reps</label>
-                            <input type="number" placeholder="e.g. 10">
+                            <input type="number" name="team_size" placeholder="e.g. 10">
                         </div>
                         <div class="form-group role-selector">
                             <label>Role</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="role" value="leader" checked> Sales Leader</label>
-                                <label><input type="radio" name="role" value="ae"> Account Executive</label>
+                                <label><input type="radio" name="role" value="Sales Leader" checked> Sales
+                                    Leader</label>
+                                <label><input type="radio" name="role" value="Account Executive"> Account
+                                    Executive</label>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Audit My Pipeline (Free)</button>
