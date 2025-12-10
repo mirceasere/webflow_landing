@@ -1,4 +1,4 @@
-const { Pool } = require('@neondatabase/serverless');
+const { neon } = require('@neondatabase/serverless');
 
 module.exports = async (req, res) => {
     // Only allow POST requests
@@ -14,27 +14,36 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-        });
+        const sql = neon(process.env.DATABASE_URL);
 
         // Insert into database
         // Assuming table 'submissions' exists with these columns
-        const query = `
+        await sql`
             INSERT INTO submissions (name, email, company, crm, team_size, role, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
-            RETURNING id;
+            VALUES (${name}, ${email}, ${company}, ${crm}, ${parseInt(team_size) || 0}, ${role}, NOW())
         `;
 
-        const values = [name, email, company, crm, parseInt(team_size) || 0, role];
-        const result = await pool.query(query, values);
+        // Note: The neon driver returns the query result. If we needed the ID, we'd do:
+        // const result = await sql`... RETURNING id`;
+        // but for now, we'll just return success to keep it simple and robust, 
+        // or we can add RETURNING id if strictly necessary. 
+        // Let's stick to the user's "attach this" style which is simpler, 
+        // but the original code returned an ID. Let's add RETURNING id to be safe.
 
-        await pool.end();
+        // Refined query with returning ID to match previous behavior best as possible
+        const result = await sql`
+            INSERT INTO submissions (name, email, company, crm, team_size, role, created_at)
+            VALUES (${name}, ${email}, ${company}, ${crm}, ${parseInt(team_size) || 0}, ${role}, NOW())
+            RETURNING id
+        `;
 
-        return res.status(200).json({ success: true, id: result.rows[0].id });
+        return res.status(200).json({ success: true, id: result[0]?.id });
 
     } catch (error) {
         console.error('Database Error:', error);
-        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            details: error.message
+        });
     }
 };
