@@ -44,6 +44,7 @@ if (form) {
 
         const formDataObj = new FormData(form);
         const data = Object.fromEntries(formDataObj.entries());
+        console.log('Sending Form Data:', data); // Debugging log
 
         try {
             const response = await fetch('/api/submit', {

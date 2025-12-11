@@ -1,6 +1,22 @@
-const { neon } = require('@neondatabase/serverless');
+const { Pool } = require('@neondatabase/serverless');
 
 module.exports = async (req, res) => {
+    // Add CORS headers
+    // When using Credentials: true, Origin cannot be '*', it must be the specific domain.
+    const allowedOrigin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
+
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -9,35 +25,27 @@ module.exports = async (req, res) => {
     // Get data from request body
     const { name, email, company, crm, team_size, role } = req.body;
 
+    // Basic validation
     if (!email || !name) {
         return res.status(400).json({ error: 'Name and Email are required' });
     }
 
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
     try {
-        const sql = neon(process.env.DATABASE_URL);
-
-        // Insert into database
-        // Assuming table 'submissions' exists with these columns
-        await sql`
+        const query = `
             INSERT INTO submissions (name, email, company, crm, team_size, role, created_at)
-            VALUES (${name}, ${email}, ${company}, ${crm}, ${parseInt(team_size) || 0}, ${role}, NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+            RETURNING id;
         `;
 
-        // Note: The neon driver returns the query result. If we needed the ID, we'd do:
-        // const result = await sql`... RETURNING id`;
-        // but for now, we'll just return success to keep it simple and robust, 
-        // or we can add RETURNING id if strictly necessary. 
-        // Let's stick to the user's "attach this" style which is simpler, 
-        // but the original code returned an ID. Let's add RETURNING id to be safe.
+        const values = [name, email, company, crm, parseInt(team_size) || 0, role];
 
-        // Refined query with returning ID to match previous behavior best as possible
-        const result = await sql`
-            INSERT INTO submissions (name, email, company, crm, team_size, role, created_at)
-            VALUES (${name}, ${email}, ${company}, ${crm}, ${parseInt(team_size) || 0}, ${role}, NOW())
-            RETURNING id
-        `;
+        const result = await pool.query(query, values);
 
-        return res.status(200).json({ success: true, id: result[0]?.id });
+        await pool.end();
+
+        return res.status(200).json({ success: true, id: result.rows[0].id });
 
     } catch (error) {
         console.error('Database Error:', error);
